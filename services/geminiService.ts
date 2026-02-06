@@ -1,11 +1,18 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-// Vite'da process.env o'rniga vite.config'da define qilganingizdan foydalanamiz
+// Vite-переменная окружения
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("VITE_GEMINI_API_KEY is not defined");
+}
+
 const genAI = new GoogleGenerativeAI(apiKey);
 
-export const parseScript = async (text: string): Promise<{ character: string; text: string }[]> => {
-  // Model nomini to'g'ri ko'rsating (masalan: gemini-1.5-flash)
+export const parseScript = async (
+  text: string
+): Promise<{ character: string; text: string }[]> => {
+
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     generationConfig: {
@@ -15,29 +22,33 @@ export const parseScript = async (text: string): Promise<{ character: string; te
         items: {
           type: SchemaType.OBJECT,
           properties: {
-            character: { type: SchemaType.STRING, description: 'Имя персонажа' },
-            text: { type: SchemaType.STRING, description: 'Текст реплики' },
+            character: {
+              type: SchemaType.STRING,
+              description: "Имя персонажа",
+            },
+            text: {
+              type: SchemaType.STRING,
+              description: "Текст реплики",
+            },
           },
-          required: ['character', 'text'],
+          required: ["character", "text"],
         },
       },
     },
   });
 
-  try {
-    const prompt = `Раздели следующий текст сцены на персонажей и их реплики. 
-    Имена персонажей обычно написаны ЗАГЛАВНЫМИ БУКВАМИ.
-    Верни результат в формате JSON массива объектов с полями 'character' и 'text'.
-    Текст для парсинга:
-    ${text}`;
+  const prompt = `
+Раздели следующий текст сцены на персонажей и их реплики.
+Имена персонажей обычно написаны ЗАГЛАВНЫМИ БУКВАМИ.
+Верни результат строго в формате JSON массива объектов:
+[{ "character": "...", "text": "..." }]
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const jsonStr = response.text().trim();
-    
-    return JSON.parse(jsonStr);
-  } catch (error) {
-    console.error("Failed to parse Gemini response:", error);
-    return [];
-  }
+Текст:
+${text}
+`;
+
+  const result = await model.generateContent(prompt);
+  const response = result.response.text();
+
+  return JSON.parse(response);
 };
