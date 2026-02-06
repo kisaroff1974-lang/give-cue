@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
 // Vite'da process.env o'rniga vite.config'da define qilganingizdan foydalanamiz
-const apiKey = process.env.API_KEY || "";
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export const parseScript = async (text: string): Promise<{ character: string; text: string }[]> => {
